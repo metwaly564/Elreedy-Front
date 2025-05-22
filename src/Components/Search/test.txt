@@ -1,0 +1,558 @@
+import React, { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+
+const ManageProducts = () => {
+  const [products, setProducts] = useState([]);
+  const [currentProductId, setCurrentProductId] = useState(null);
+  const [imagesToDelete, setImagesToDelete] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [csvFile, setCsvFile] = useState(null);
+  const [csvUploadStatus, setCsvUploadStatus] = useState("");
+  const [uploadStatus, setUploadStatus] = useState("");
+  const [newImages, setNewImages] = useState([]);
+
+  const { register, handleSubmit, reset, setValue, watch } = useForm();
+
+  // Fetch products on component mount
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:3000/api/v1/products/product"
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setProducts(data);
+      } else {
+        console.error("Failed to fetch products");
+      }
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    }
+  };
+
+  const handleCsvSubmit = async (e) => {
+    e.preventDefault();
+    if (!csvFile) return;
+
+    const formData = new FormData();
+    formData.append("file", csvFile);
+
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:3000/api/v1/products/csv",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      if (response.ok) {
+        setCsvUploadStatus("CSV uploaded successfully!");
+        fetchProducts();
+      } else {
+        setCsvUploadStatus("Failed to upload CSV.");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      setCsvUploadStatus("Error uploading CSV.");
+    }
+  };
+
+  const handleProductSubmit = async (data) => {
+    const formData = new FormData();
+
+    // Append all form data
+    Object.keys(data).forEach((key) => {
+      if (
+        key !== "image" &&
+        key !== "tags" &&
+        key !== "category" &&
+        key !== "existingImages"
+      ) {
+        formData.append(key, data[key]);
+      }
+    });
+
+    // Handle image ranks
+    if (data.existingImages) {
+      formData.append(
+        "imageRanks",
+        JSON.stringify(
+          data.existingImages
+            .filter((img) => !imagesToDelete.includes(img._id))
+            .map((img) => ({
+              id: img._id,
+              rank: img.rank || 0,
+            }))
+        )
+      );
+    }
+
+    // Handle tags and categories
+    const selectedTags = Object.keys(data)
+      .filter((key) => key.startsWith("tags_") && data[key])
+      .map((key) => key.replace("tags_", ""));
+    const selectedCategories = Object.keys(data)
+      .filter((key) => key.startsWith("category_") && data[key])
+      .map((key) => key.replace("category_", ""));
+
+    formData.append("tags", JSON.stringify(selectedTags));
+    formData.append("categories", JSON.stringify(selectedCategories));
+
+    // Handle new images
+    if (newImages.length > 0) {
+      for (let i = 0; i < newImages.length; i++) {
+        formData.append("image", newImages[i]);
+      }
+    }
+
+    if (currentProductId) {
+      imagesToDelete.forEach((id) => formData.append("imagesToDelete", id));
+    }
+
+    const url = currentProductId
+      ? `http://127.0.0.1:3000/api/v1/products/${currentProductId}`
+      : "http://127.0.0.1:3000/api/v1/products/product";
+
+    const method = currentProductId ? "PUT" : "POST";
+
+    try {
+      const response = await fetch(url, {
+        method,
+        body: formData,
+      });
+
+      if (response.ok) {
+        setUploadStatus(
+          currentProductId
+            ? "Product updated successfully!"
+            : "Product added successfully!"
+        );
+        setShowModal(false);
+        setNewImages([]);
+        fetchProducts();
+      } else {
+        setUploadStatus("Failed to save product.");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      setUploadStatus("Error submitting form.");
+    }
+  };
+
+  const handleEdit = async (productId) => {
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:3000/api/v1/products/product/${productId}`
+      );
+      if (response.ok) {
+        const product = await response.json();
+        populateForm(product);
+        setImagesToDelete([]);
+        setShowModal(true);
+      } else {
+        console.error("Failed to fetch product");
+      }
+    } catch (error) {
+      console.error("Error fetching product:", error);
+    }
+  };
+
+  const populateForm = (product) => {
+    reset();
+    setCurrentProductId(product._id);
+
+    // Set values for all fields
+    setValue("skuId", product.skuId);
+    setValue("nameEn", product.nameEn);
+    setValue("nameAr", product.nameAr);
+    setValue("company", product.company);
+    setValue("cardDescriptionEn", product.cardDescriptionEn);
+    setValue("cardDescriptionAr", product.cardDescriptionAr);
+    setValue("descriptionEn", product.descriptionEn);
+    setValue("descriptionAr", product.descriptionAr);
+    setValue("priceBefore", product.priceBefore);
+    setValue("priceAfter", product.priceAfter);
+    setValue("availableStock", product.availableStock);
+    setValue("maxOrderQuantity", product.maxOrderQuantity);
+    setValue("itemRank", product.itemRank);
+
+    // Set existing images with their ranks
+    setValue(
+      "existingImages",
+      product.Images?.map((img) => ({
+        _id: img._id,
+        url: img.url,
+        rank: img.rank || 0,
+      })) || []
+    );
+
+    // Set tags
+    const tags = product.tags || [];
+    tags.forEach((tag) => {
+      setValue(`tags_${tag}`, true);
+    });
+
+    // Set categories
+    const cats = product.categories || [];
+    cats.forEach((cat) => {
+      setValue(`category_${cat}`, true);
+    });
+  };
+
+  const handleDelete = async (productId) => {
+    if (!productId) return;
+
+    if (confirm("Are you sure you want to delete this product?")) {
+      try {
+        const response = await fetch(
+          `http://127.0.0.1:3000/api/v1/products/product/${productId}`,
+          {
+            method: "DELETE",
+          }
+        );
+        if (response.ok) {
+          fetchProducts();
+        } else {
+          console.error("Failed to delete product");
+        }
+      } catch (error) {
+        console.error("Error deleting product:", error);
+      }
+    }
+  };
+
+  const openAddModal = () => {
+    reset();
+    setCurrentProductId(null);
+    setImagesToDelete([]);
+    setNewImages([]);
+    setShowModal(true);
+  };
+
+  const handleImageDelete = (imageId) => {
+    setImagesToDelete([...imagesToDelete, imageId]);
+  };
+
+  const handleNewImageDelete = (index) => {
+    const updatedImages = [...newImages];
+    updatedImages.splice(index, 1);
+    setNewImages(updatedImages);
+  };
+
+  const handleImageUpload = (e) => {
+    const files = Array.from(e.target.files);
+    setNewImages([...newImages, ...files]);
+  };
+
+  const handleRankChange = (imageId, newRank) => {
+    const updatedImages = [...watch("existingImages")];
+    const imageIndex = updatedImages.findIndex((i) => i._id === imageId);
+    if (imageIndex >= 0) {
+      updatedImages[imageIndex].rank = parseInt(newRank) || 0;
+      setValue("existingImages", updatedImages);
+    }
+  };
+
+  // Categories and tags data
+  const categories = ["cream", "proten", "vitamen", "sports tools"];
+  const tags = ["hot", "good", "gg", "sale"];
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-6">Manage Products</h1>
+
+      <div className="flex flex-col md:flex-row gap-6">
+        {/* CSV Upload Section */}
+        <div className="w-full md:w-1/4 bg-white p-4 rounded-lg shadow">
+          <h2 className="text-xl font-semibold mb-4">Upload CSV</h2>
+          <form onSubmit={handleCsvSubmit}>
+            <div className="mb-4">
+              <label className="block text-gray-700 mb-2" htmlFor="csvFile">
+                Select CSV File
+              </label>
+              <input
+                type="file"
+                id="csvFile"
+                className="w-full px-3 py-2 border rounded"
+                accept=".csv"
+                required
+                onChange={(e) => setCsvFile(e.target.files[0])}
+              />
+            </div>
+            <button
+              type="submit"
+              className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+            >
+              Upload CSV
+            </button>
+          </form>
+
+          <a
+            href="https://drive.google.com/uc?export=download&id=1Caq5Y0Db3G-GRx7cjLkawnfgfuVkXBQI"
+            className="mt-5 inline-block"
+          >
+            <button className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">
+              Download CSV
+            </button>
+          </a>
+
+          {csvUploadStatus && (
+            <div className="mt-3 p-2 text-sm text-red-600">
+              {csvUploadStatus}
+            </div>
+          )}
+        </div>
+
+        {/* Products Table Section */}
+        <div className="w-full mt-[5em] md:w-3/4 bg-white p-4 rounded-lg shadow">
+          <button
+            onClick={openAddModal}
+            className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded mb-4"
+          >
+            Add New Product
+          </button>
+
+          <div className="overflow-x-auto">
+            <table className="min-w-full bg-white">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="py-2 px-4 border">Image</th>
+                  <th className="py-2 px-4 border">SKU ID</th>
+                  <th className="py-2 px-4 border">Name (EN)</th>
+                  <th className="py-2 px-4 border">Name (AR)</th>
+                  <th className="py-2 px-4 border">Price Before</th>
+                  <th className="py-2 px-4 border">Price After</th>
+                  <th className="py-2 px-4 border">Rank</th>
+                  <th className="py-2 px-4 border">Controls</th>
+                </tr>
+              </thead>
+              <tbody>
+                {products.map((product) => (
+                  <tr key={product._id} className="hover:bg-gray-50">
+                    <td className="py-2 px-4 border">
+                      {product.Images && product.Images.length > 0 ? (
+                        <img
+                          src={product.Images[0].url}
+                          alt={product.nameEn}
+                          className="w-12 h-12 object-cover"
+                        />
+                      ) : (
+                        "No image"
+                      )}
+                    </td>
+                    <td className="py-2 px-4 border">{product.skuId}</td>
+                    <td className="py-2 px-4 border">{product.nameEn}</td>
+                    <td className="py-2 px-4 border">{product.nameAr}</td>
+                    <td className="py-2 px-4 border">{product.priceBefore}</td>
+                    <td className="py-2 px-4 border">{product.priceAfter}</td>
+                    <td className="py-2 px-4 border">{product.itemRank}</td>
+                    <td className="py-2 px-4 border">
+                      <button
+                        onClick={() => handleEdit(product.skuId)}
+                        className="bg-blue-500 hover:bg-blue-600 text-white py-1 px-2 rounded mr-2"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(product.skuId)}
+                        className="bg-red-500 hover:bg-red-600 text-white py-1 px-2 rounded"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Product Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl max-h-screen overflow-y-auto">
+            <div className="flex justify-between items-center border-b p-4">
+              <h3 className="text-xl font-semibold">
+                {currentProductId ? "Edit Product" : "Add New Product"}
+              </h3>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="p-4">
+              <form onSubmit={handleSubmit(handleProductSubmit)}>
+                <div className="flex flex-col md:flex-row gap-6">
+                  {/* Product Details */}
+                  <div className="w-full md:w-2/3">
+                    {/* ... (keep all your existing product detail fields) ... */}
+                  </div>
+
+                  {/* Image Management */}
+                  <div className="w-full md:w-1/3">
+                    <h5 className="text-lg font-medium mb-3">Product Images</h5>
+
+                    <div className="mb-4">
+                      <label
+                        className="block text-gray-700 mb-2"
+                        htmlFor="image"
+                      >
+                        Upload New Images
+                      </label>
+                      <input
+                        type="file"
+                        id="image"
+                        className="w-full px-3 py-2 border rounded"
+                        multiple
+                        onChange={handleImageUpload}
+                      />
+                    </div>
+
+                    {/* New Images Table */}
+                    {newImages.length > 0 && (
+                      <div className="mt-4">
+                        <h6 className="font-medium mb-2">New Images</h6>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full bg-white border">
+                            <thead>
+                              <tr className="bg-gray-100">
+                                <th className="py-2 px-4 border">Preview</th>
+                                <th className="py-2 px-4 border">Rank</th>
+                                <th className="py-2 px-4 border">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {newImages.map((file, index) => (
+                                <tr key={index}>
+                                  <td className="py-2 px-4 border">
+                                    <img
+                                      src={URL.createObjectURL(file)}
+                                      alt={`Preview ${index}`}
+                                      className="w-12 h-12 object-cover"
+                                    />
+                                  </td>
+                                  <td className="py-2 px-4 border">
+                                    <input
+                                      type="number"
+                                      className="w-16 px-2 py-1 border rounded"
+                                      defaultValue="0"
+                                      onChange={(e) => {
+                                        // You can implement rank for new images if needed
+                                      }}
+                                    />
+                                  </td>
+                                  <td className="py-2 px-4 border">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleNewImageDelete(index)}
+                                      className="text-red-500 hover:text-red-700"
+                                    >
+                                      Remove
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Existing Images Table */}
+                    {currentProductId &&
+                      watch("existingImages")?.length > 0 && (
+                        <div className="mt-4">
+                          <h6 className="font-medium mb-2">Current Images</h6>
+                          <div className="overflow-x-auto">
+                            <table className="min-w-full bg-white border">
+                              <thead>
+                                <tr className="bg-gray-100">
+                                  <th className="py-2 px-4 border">Image</th>
+                                  <th className="py-2 px-4 border">Rank</th>
+                                  <th className="py-2 px-4 border">Actions</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {watch("existingImages")
+                                  ?.filter(
+                                    (img) => !imagesToDelete.includes(img._id)
+                                  )
+                                  ?.sort(
+                                    (a, b) => (a.rank || 0) - (b.rank || 0)
+                                  )
+                                  ?.map((img, index) => (
+                                    <tr key={img._id}>
+                                      <td className="py-2 px-4 border">
+                                        <img
+                                          src={img.url}
+                                          alt={`Product ${index}`}
+                                          className="w-12 h-12 object-cover"
+                                        />
+                                      </td>
+                                      <td className="py-2 px-4 border">
+                                        <input
+                                          type="number"
+                                          className="w-16 px-2 py-1 border rounded"
+                                          value={img.rank || 0}
+                                          onChange={(e) =>
+                                            handleRankChange(
+                                              img._id,
+                                              e.target.value
+                                            )
+                                          }
+                                        />
+                                      </td>
+                                      <td className="py-2 px-4 border">
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            handleImageDelete(img._id)
+                                          }
+                                          className="text-red-500 hover:text-red-700"
+                                        >
+                                          Remove
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <button
+                    type="submit"
+                    className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+                  >
+                    Save Product
+                  </button>
+                </div>
+              </form>
+
+              {uploadStatus && (
+                <div className="mt-3 p-2 text-sm text-red-600">
+                  {uploadStatus}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ManageProducts;

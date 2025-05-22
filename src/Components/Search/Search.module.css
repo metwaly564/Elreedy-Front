@@ -1,0 +1,60 @@
+.Search {}
+
+.slideItem {
+  width: 100%;
+  padding: 0.125rem;
+}
+
+@media (min-width: 640px) {
+  .slideItem {
+    padding: 0.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .slideItem {
+    padding: 0.125rem;
+  }
+}
+
+.addToCartButton {
+  font-family: 'alexandria';
+  font-weight: 500;
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  right: 0;
+  background-color: rgba(200,15,18);
+  color: white;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  width: 100%;
+  transition: all 0.3s;
+  transform: translateY(100%); /* Hide button by default */
+  z-index: 10; /* Ensure button is above other content */
+}
+
+/* Show button on hover for desktop */
+@media (min-width: 768px) {
+  .slideItem:hover .addToCartButton {
+    transform: translateY(0); /* Show button on hover */
+  }
+}
+
+/* Always show button on mobile */
+@media (max-width: 767px) {
+  .addToCartButton {
+    transform: translateY(0); /* Always visible on mobile */
+  }
+}
+
+.addToCartButton:hover {
+  background-color: rgb(201, 10, 13);
+  color: rgb(237, 237, 237);
+  box-shadow: 9px 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.addToCartButton:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}

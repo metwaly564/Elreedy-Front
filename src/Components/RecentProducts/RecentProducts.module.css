@@ -1,0 +1,91 @@
+Adjust spacing between slides
+.slick-slide {
+    padding: 0 0px; /* Reduced from default */
+    display: flex;
+    justify-items: center;
+    align-items: center;
+  
+  }
+  
+  /* Remove extra space around the slider */
+  .slick-list {
+    margin: 0 0em;
+  }
+  
+  /* Product card styling */
+  .product-slider .slick-slide > div {
+    margin: 0px 0em; /* Adjust as needed */
+  }
+
+  .sliderContainer {
+
+    overflow: hidden;
+  }
+  .slideItem {
+
+  
+}
+
+/* Add these styles to your existing module.css file */
+.addToCartButton {
+  font-family: 'alexandria';
+  font-weight: 500;
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  right: 0;
+  background-color: rgba(200,15,18);
+  color: white;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;;
+  width: 100%;
+  transition: all 0.3s;
+  transform: translateY(100%); /* Hide button by default */
+  z-index: 10; /* Ensure button is above other content */
+  
+}
+
+/* Show button on hover for desktop */
+@media (min-width: 768px) {
+  .slideItem:hover .addToCartButton {
+    transform: translateY(0); /* Show button on hover */
+  }
+}
+
+/* Always show button on mobile */
+@media (max-width: 767px) {
+  .addToCartButton {
+    transform: translateY(0); /* Always visible on mobile */
+  }
+}
+
+.addToCartButton:hover {
+  background-color: rgb(201, 10, 13); /* red-500 */
+  color: rgb(237, 237, 237);
+  box-shadow: 9px 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Make selectors more specific and add hover functionality */
+:global(.react-multiple-carousel__arrow--left),
+:global(.react-multiple-carousel__arrow--right) {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    pointer-events: none;
+}
+
+:global(.react-multiple-carousel__arrow--left) {
+    left: 1% !important;
+}
+
+:global(.react-multiple-carousel__arrow--right) {
+    right: 1% !important;
+}
+
+/* Show arrows on hover */
+:global(.banner-slider:hover) :global(.react-multiple-carousel__arrow--left),
+:global(.banner-slider:hover) :global(.react-multiple-carousel__arrow--right) {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto;
+}

@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Products</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.24/css/dataTables.bootstrap4.min.css">
+    <style>
+        .image-preview {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .image-container {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        .image-item {
+            position: relative;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .delete-image-btn {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: red;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>Manage Products</h1>
+        <div class="row">
+            <!-- CSV Upload Section -->
+            <div class="col-md-3">
+                <h2>Upload CSV</h2>
+                <form id="csvForm" enctype="multipart/form-data" method="post">
+                    <div class="form-group">
+                        <label for="csvFile">Select CSV File</label>
+                        <input type="file" class="form-control-file" id="csvFile" name="csvFile" accept=".csv" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Upload CSV</button>
+                </form>
+                <a href="https://drive.google.com/uc?export=download&id=1Caq5Y0Db3G-GRx7cjLkawnfgfuVkXBQI">
+                    <button style="margin-top: 20px;" type="submit" class="btn btn-primary">Download CSV</button>
+                </a>
+                <div id="csvUploadStatus" class="mt-3"></div>
+            </div>
+
+            <!-- Products Table Section -->
+            <div class="col-md-9">
+                <button type="button" class="btn btn-primary mb-3" id="addProductBtn">Add New Product</button>
+                <table class="table table-striped" id="productsTable">
+                    <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>SKU ID</th>
+                            <th>Name (EN)</th>
+                            <th>Name (AR)</th>
+                            <th>Price Before</th>
+                            <th>Price After</th>
+                            <th>Rank</th>
+                            <th>Controls</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Rows will be added dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Product Modal -->
+    <div class="modal" id="addProductModal">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Add Product</h4>
+                    <button type="button" class="close" data-dismiss="modal">×</button>
+                </div>
+                <div class="modal-body">
+                    <form id="addProductForm" enctype="multipart/form-data" method="post">
+                        <div class="row">
+                            <!-- Product Details (8 columns) -->
+                            <div class="col-md-8">
+                                <div class="form-group">
+                                    <label>SKU ID</label>
+                                    <input type="text" class="form-control" id="addSkuId" required>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label>Name (English)</label>
+                                        <input type="text" class="form-control" id="addNameEn" required>
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label>Name (Arabic)</label>
+                                        <input type="text" class="form-control" id="addNameAr" required>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label>Company</label>
+                                        <input type="text" class="form-control" id="addCompany" required>
+                                    </div>
+                                    <div class="form-group col-md-6" id="addCategoriesCollection">
+                                        <label class="form-label">Categories</label><br>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="checkbox" name="addCategory" value="cream" id="addCategoryCream">
+                                            <label class="form-check-label" for="addCategoryCream">Cream</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="checkbox" name="addCategory" value="proten" id="addCategoryProten">
+                                            <label class="form-check-label" for="addCategoryProten">Proten</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="checkbox" name="addCategory" value="vitamen" id="addCategoryVitamen">
+                                            <label class="form-check-label" for="addCategoryVitamen">Vitamen</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="checkbox" name="addCategory" value="sports tools" id="addCategorySportsTools">
+                                            <label class="form-check-label" for="addCategorySportsTools">Sports Tools</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label>Card Description (English)</label>
+                                        <input type="text" class="form-control" id="addCardDescriptionEn" required>
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label>Card Description (Arabic)</label>
+                                        <input type="text" class="form-control" id="addCardDescriptionAr" required>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Description (English)</label>
+                                    <textarea class="form-control" id="addDescriptionEn" rows="3" required></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label>Description (Arabic)</label>
+                                    <textarea class="form-control" id="addDescriptionAr" rows="3" required></textarea>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label>Price Before</label>
+                                        <input type="number" class="form-control" id="addPriceBefore" required>
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label>Price After</label>
+                                        <input type="number" class="form-control" id="addPriceAfter" required>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label>Available Stock</label>
+                                        <input type="number" class="form-control" id="addAvailableStock" required>
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label>Max Order Quantity</label>
+                                        <input type="number" class="form-control" id="addMaxOrderQuantity" required>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Item Rank</label>
+                                    <input type="number" class="form-control" id="addItemRank" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Tags</label><br>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="addTags" value="hot" id="addTagHot">
+                                        <label class="form-check-label" for="addTagHot">Hot</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="addTags" value="good" id="addTagGood">
+                                        <label class="form-check-label" for="addTagGood">Good</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="addTags" value="gg" id="addTagGg">
+                                        <label class="form-check-label" for="addTagGg">GG</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="addTags" value="sale" id="addTagSale">
+                                        <label class="form-check-label" for="addTagSale">Sale</label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Image Management (4 columns) -->
+                            <div class="col-md-4">
+                                <h5>Product Images</h5>
+                                <div class="form-group">
+                                    <label>Upload Images</label>
+                                    <input type="file" class="form-control-file" id="addImage" name="addImage" multiple required>
+                                    <div class="image-container" id="addImagePreviews"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Image Ranks (comma separated, order matches upload order)</label>
+                                    <input type="text" class="form-control" id="addImageRanks" placeholder="1,2,3...">
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Product</button>
+                    </form>
+                    <div id="addUploadStatus" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Product Modal -->
+    <div class="modal" id="editProductModal">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Edit Product</h4>
+                    <button type="button" class="close" data-dismiss="modal">×</button>
+                </div>
+                <div class="modal-body">
+                    <form id="editProductForm" enctype="multipart/form-data" method="post">
+                        <input type="hidden" id="editProductId">
+                        <div class="row">
+                            <!-- Product Details (8 columns) -->
+                            <div class="col-md-8">
+                                <div class="form-group">
+                                    <label>SKU ID</label>
+                                    <input type="text" class="form-control" id="editSkuId" disabled>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label>Name (English)</label>
+                                        <input type="text" class="form-control" id="editNameEn" required>
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label>Name (Arabic)</label>
+                                        <input type="text" class="form-control" id="editNameAr" required>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label>Company</label>
+                                        <input type="text" class="form-control" id="editCompany" required>
+                                    </div>
+                                    <div class="form-group col-md-6" id="editCategoriesCollection">
+                                        <label class="form-label">Categories</label><br>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="checkbox" name="editCategory" value="cream" id="editCategoryCream">
+                                            <label class="form-check-label" for="editCategoryCream">Cream</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="checkbox" name="editCategory" value="proten" id="editCategoryProten">
+                                            <label class="form-check-label" for="editCategoryProten">Proten</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="checkbox" name="editCategory" value="vitamen" id="editCategoryVitamen">
+                                            <label class="form-check-label" for="editCategoryVitamen">Vitamen</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="checkbox" name="editCategory" value="sports tools" id="editCategorySportsTools">
+                                            <label class="form-check-label" for="editCategorySportsTools">Sports Tools</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label>Card Description (English)</label>
+                                        <input type="text" class="form-control" id="editCardDescriptionEn" required>
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label>Card Description (Arabic)</label>
+                                        <input type="text" class="form-control" id="editCardDescriptionAr" required>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Description (English)</label>
+                                    <textarea class="form-control" id="editDescriptionEn" rows="3" required></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label>Description (Arabic)</label>
+                                    <textarea class="form-control" id="editDescriptionAr" rows="3" required></textarea>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label>Price Before</label>
+                                        <input type="number" class="form-control" id="editPriceBefore" required>
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label>Price After</label>
+                                        <input type="number" class="form-control" id="editPriceAfter" required>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label>Available Stock</label>
+                                        <input type="number" class="form-control" id="editAvailableStock" required>
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label>Max Order Quantity</label>
+                                        <input type="number" class="form-control" id="editMaxOrderQuantity" required>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Item Rank</label>
+                                    <input type="number" class="form-control" id="editItemRank" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Tags</label><br>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="editTags" value="hot" id="editTagHot">
+                                        <label class="form-check-label" for="editTagHot">Hot</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="editTags" value="good" id="editTagGood">
+                                        <label class="form-check-label" for="editTagGood">Good</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="editTags" value="gg" id="editTagGg">
+                                        <label class="form-check-label" for="editTagGg">GG</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="editTags" value="sale" id="editTagSale">
+                                        <label class="form-check-label" for="editTagSale">Sale</label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Image Management (4 columns) -->
+                            <div class="col-md-4">
+                                <h5>Existing Product Images</h5>
+                                <div class="image-container" id="editExistingImagesContainer"></div>
+                                
+                                <h5 class="mt-3">Upload New Images</h5>
+                                <div class="form-group">
+                                    <label>Select New Images</label>
+                                    <input type="file" class="form-control-file" id="editImage" name="editImage" multiple>
+                                    <div class="image-container" id="editImagePreviews"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label>New Image Ranks (comma separated, order matches upload order)</label>
+                                    <input type="text" class="form-control" id="editImageRanks" placeholder="1,2,3...">
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Update Product</button>
+                    </form>
+                    <div id="editUploadStatus" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap and Custom Scripts -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.24/js/dataTables.bootstrap4.min.js"></script>
+
+    <script>
+        let imagesToDelete = [];
+        let currentProductImages = [];
+        let allCategories = [];
+        let allTags = [];
+        
+        // Get user token from localStorage
+        function getUserToken() {
+            return localStorage.getItem('userToken');
+        }
+        
+        // Set up headers with authorization
+        function getAuthHeaders(contentType = 'application/json') {
+            const headers = {
+                'Access-Token': getUserToken()
+            };
+            
+            if (contentType) {
+                headers['Content-Type'] = contentType;
+            }
+            
+            return headers;
+        }
+        
+        // Check if user is admin
+        async function checkAdminStatus() {
+            try {
+                const response = await fetch('http://127.0.0.1:3000/api/v1/users/me', {
+                    headers: getAuthHeaders()
+                });
+                
+                if (response.ok) {
+                    const userData = await response.json();
+                    return userData.role === 'admin';
+                }
+                return false;
+            } catch (error) {
+                console.error('Error checking admin status:', error);
+                return false;
+            }
+        }
+        
+        // Fetch all categories
+        async function fetchCategories() {
+            try {
+                const response = await fetch('http://127.0.0.1:3000/api/v1/categories', {
+                    headers: getAuthHeaders()
+                });
+                
+                if (response.ok) {
+                    allCategories = await response.json();
+                    populateCategoryDropdowns();
+                }
+            } catch (error) {
+                console.error('Error fetching categories:', error);
+            }
+        }
+        
+        // Fetch all tags
+        async function fetchTags() {
+            try {
+                const response = await fetch('http://127.0.0.1:3000/api/v1/tags', {
+                    headers: getAuthHeaders()
+                });
+                
+                if (response.ok) {
+                    allTags = await response.json();
+                    populateTagDropdowns();
+                }
+            } catch (error) {
+                console.error('Error fetching tags:', error);
+            }
+        }
+        
+        // Populate category dropdowns
+        function populateCategoryDropdowns() {
+            const addContainer = document.getElementById('addCategoriesCollection');
+            const editContainer = document.getElementById('editCategoriesCollection');
+            
+            // Clear existing checkboxes
+            addContainer.innerHTML = '';
+            editContainer.innerHTML = '';
+            
+            // Add label
+            const label = document.createElement('label');
+            label.className = 'form-label';
+            label.textContent = 'Categories';
+            
+            addContainer.appendChild(label.cloneNode(true));
+            editContainer.appendChild(label.cloneNode(true));
+            
+            // Add checkboxes for each category
+            allCategories.forEach(category => {
+                // For add form
+                const addDiv = document.createElement('div');
+                addDiv.className = 'form-check form-check-inline';
+                addDiv.innerHTML = `
+                    <input class="form-check-input" type="checkbox" name="addCategory" value="${category._id}" id="addCategory${category._id}">
+                    <label class="form-check-label" for="addCategory${category._id}">${category.nameEn}</label>
+                `;
+                addContainer.appendChild(addDiv);
+                
+                // For edit form
+                const editDiv = document.createElement('div');
+                editDiv.className = 'form-check form-check-inline';
+                editDiv.innerHTML = `
+                    <input class="form-check-input" type="checkbox" name="editCategory" value="${category._id}" id="editCategory${category._id}">
+                    <label class="form-check-label" for="editCategory${category._id}">${category.nameEn}</label>
+                `;
+                editContainer.appendChild(editDiv);
+            });
+        }
+        
+        // Populate tag dropdowns
+        function populateTagDropdowns() {
+            const addContainer = document.querySelector('#addProductForm .tags-container');
+            const editContainer = document.querySelector('#editProductForm .tags-container');
+            
+            if (!addContainer) {
+                const addDiv = document.createElement('div');
+                addDiv.className = 'form-group tags-container';
+                addDiv.innerHTML = '<label class="form-label">Tags</label><br>';
+                document.getElementById('addProductForm').querySelector('.form-group:last-of-type').after(addDiv);
+            }
+            
+            if (!editContainer) {
+                const editDiv = document.createElement('div');
+                editDiv.className = 'form-group tags-container';
+                editDiv.innerHTML = '<label class="form-label">Tags</label><br>';
+                document.getElementById('editProductForm').querySelector('.form-group:last-of-type').after(editDiv);
+            }
+            
+            // Clear existing checkboxes
+            if (addContainer) addContainer.innerHTML = '<label class="form-label">Tags</label><br>';
+            if (editContainer) editContainer.innerHTML = '<label class="form-label">Tags</label><br>';
+            
+            // Add checkboxes for each tag
+            allTags.forEach(tag => {
+                // For add form
+                if (addContainer) {
+                    const addDiv = document.createElement('div');
+                    addDiv.className = 'form-check form-check-inline';
+                    addDiv.innerHTML = `
+                        <input class="form-check-input" type="checkbox" name="addTags" value="${tag._id}" id="addTag${tag._id}">
+                        <label class="form-check-label" for="addTag${tag._id}">${tag.nameEn}</label>
+                    `;
+                    addContainer.appendChild(addDiv);
+                }
+                
+                // For edit form
+                if (editContainer) {
+                    const editDiv = document.createElement('div');
+                    editDiv.className = 'form-check form-check-inline';
+                    editDiv.innerHTML = `
+                        <input class="form-check-input" type="checkbox" name="editTags" value="${tag._id}" id="editTag${tag._id}">
+                        <label class="form-check-label" for="editTag${tag._id}">${tag.nameEn}</label>
+                    `;
+                    editContainer.appendChild(editDiv);
+                }
+            });
+        }
+        
+        // Preview images before upload
+        function setupImagePreview(inputElement, previewContainer) {
+            inputElement.addEventListener('change', function() {
+                previewContainer.innerHTML = '';
+                if (this.files) {
+                    Array.from(this.files).forEach(file => {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const preview = document.createElement('div');
+                            preview.className = 'image-item';
+                            preview.innerHTML = `
+                                <img src="${e.target.result}" class="image-preview">
+                            `;
+                            previewContainer.appendChild(preview);
+                        }
+                        reader.readAsDataURL(file);
+                    });
+                }
+            });
+        }
+        
+        // Initialize image previews
+        document.addEventListener('DOMContentLoaded', function() {
+            setupImagePreview(document.getElementById('addImage'), document.getElementById('addImagePreviews'));
+            setupImagePreview(document.getElementById('editImage'), document.getElementById('editImagePreviews'));
+        });
+        
+        // Event delegation for edit and delete buttons
+        document.getElementById('productsTable').addEventListener('click', function(event) {
+            const target = event.target;
+            if (target.classList.contains('edit-btn') || target.closest('.edit-btn')) {
+                const btn = target.classList.contains('edit-btn') ? target : target.closest('.edit-btn');
+                handleEdit(btn);
+            } else if (target.classList.contains('delete-btn') || target.closest('.delete-btn')) {
+                const btn = target.classList.contains('delete-btn') ? target : target.closest('.delete-btn');
+                handleDelete(btn);
+            }
+        });
+        
+        // Handle CSV Form Submission
+        document.getElementById('csvForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const formData = new FormData();
+            const csvFile = document.getElementById('csvFile').files[0];
+            formData.append('file', csvFile);
+            
+            try {
+                const response = await fetch('http://127.0.0.1:3000/api/v1/products/csv', {
+                    method: 'POST',
+                    body: formData,
+                    headers: getAuthHeaders(null) // No content-type for FormData
+                });
+                
+                if (response.ok) {
+                    document.getElementById('csvUploadStatus').innerText = 'CSV uploaded successfully!';
+                    fetchProducts();
+                } else {
+                    const errorData = await response.json();
+                    document.getElementById('csvUploadStatus').innerText = errorData.message || 'Failed to upload CSV.';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('csvUploadStatus').innerText = 'Error uploading CSV.';
+            }
+        });
+        
+        // Handle Add Product Form Submission
+        document.getElementById('addProductForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            
+            // First create the product
+            const productData = {
+                skuId: document.getElementById("addSkuId").value,
+                nameEn: document.getElementById("addNameEn").value,
+                nameAr: document.getElementById("addNameAr").value,
+                company: document.getElementById("addCompany").value,
+                cardDescriptionEn: document.getElementById("addCardDescriptionEn").value,
+                cardDescriptionAr: document.getElementById("addCardDescriptionAr").value,
+                descriptionEn: document.getElementById("addDescriptionEn").value,
+                descriptionAr: document.getElementById("addDescriptionAr").value,
+                priceBefore: document.getElementById("addPriceBefore").value,
+                priceAfter: document.getElementById("addPriceAfter").value,
+                availableStock: document.getElementById("addAvailableStock").value,
+                maxOrderQuantity: document.getElementById("addMaxOrderQuantity").value,
+                itemRank: document.getElementById("addItemRank").value,
+                tags: [],
+                categories: []
+            };
+            
+            // Get selected tags and categories
+            document.querySelectorAll('input[name="addTags"]:checked').forEach(tag => {
+                productData.tags.push(tag.value);
+            });
+            document.querySelectorAll('input[name="addCategory"]:checked').forEach(cat => {
+                productData.categories.push(cat.value);
+            });
+            
+            try {
+                // Create the product first
+                const createResponse = await fetch('http://127.0.0.1:3000/api/v1/products/product', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify(productData)
+                });
+                
+                if (!createResponse.ok) {
+                    const errorData = await createResponse.json();
+                    throw new Error(errorData.message || "Failed to create product");
+                }
+                
+                const product = await createResponse.json();
+                const productId = product._id || product.id;
+                
+                // Then upload images if any
+                const imageFiles = document.getElementById("addImage").files;
+                if (imageFiles.length > 0) {
+                    const ranksInput = document.getElementById("addImageRanks").value;
+                    const ranks = ranksInput ? ranksInput.split(',').map(r => parseInt(r.trim())) : [];
+                    
+                    for (let i = 0; i < imageFiles.length; i++) {
+                        const imageFormData = new FormData();
+                        imageFormData.append("image", imageFiles[i]);
+                        
+                        // Upload image
+                        const imageResponse = await fetch(`http://127.0.0.1:3000/api/v1/products/image`, {
+                            method: 'POST',
+                            headers: getAuthHeaders(null), // No content-type for FormData
+                            body: imageFormData
+                        });
+                        
+                        if (!imageResponse.ok) {
+                            const errorData = await imageResponse.json();
+                            console.error("Failed to upload image:", errorData);
+                            continue;
+                        }
+                        
+                        const imageData = await imageResponse.json();
+                        const imageId = imageData.id;
+                        const rank = ranks[i] || 1;
+                        
+                        // Update image rank
+                        await fetch(`http://127.0.0.1:3000/api/v1/products/product-image`, {
+                            method: 'PATCH',
+                            headers: getAuthHeaders(),
+                            body: JSON.stringify({
+                                id: imageId,
+                                rank: rank,
+                                productId: productId
+                            })
+                        });
+                    }
+                }
+                
+                document.getElementById('addUploadStatus').innerText = "Product added successfully!";
+                $('#addProductModal').modal('hide');
+                fetchProducts();
+            } catch (error) {
+                console.error("Error:", error);
+                document.getElementById('addUploadStatus').innerText = error.message || "Error submitting form.";
+            }
+        });
+        
+        // Handle Edit Product Form Submission
+        document.getElementById('editProductForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const productId = document.getElementById("editProductId").value;
+            
+            // First update the product data
+            const productData = {
+                nameEn: document.getElementById("editNameEn").value,
+                nameAr: document.getElementById("editNameAr").value,
+                company: document.getElementById("editCompany").value,
+                cardDescriptionEn: document.getElementById("editCardDescriptionEn").value,
+                cardDescriptionAr: document.getElementById("editCardDescriptionAr").value,
+                descriptionEn: document.getElementById("editDescriptionEn").value,
+                descriptionAr: document.getElementById("editDescriptionAr").value,
+                priceBefore: document.getElementById("editPriceBefore").value,
+                priceAfter: document.getElementById("editPriceAfter").value,
+                availableStock: document.getElementById("editAvailableStock").value,
+                maxOrderQuantity: document.getElementById("editMaxOrderQuantity").value,
+                itemRank: document.getElementById("editItemRank").value,
+                tags: [],
+                categories: []
+            };
+            
+            // Get selected tags and categories
+            document.querySelectorAll('input[name="editTags"]:checked').forEach(tag => {
+                productData.tags.push(tag.value);
+            });
+            document.querySelectorAll('input[name="editCategory"]:checked').forEach(cat => {
+                productData.categories.push(cat.value);
+            });
+            
+            try {
+                // Update the product data - Using PATCH method
+                const updateResponse = await fetch(`http://127.0.0.1:3000/api/v1/products/product/${productId}`, {
+                    method: 'PATCH',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify(productData)
+                });
+                
+                if (!updateResponse.ok) {
+                    const errorData = await updateResponse.json();
+                    throw new Error(errorData.message || "Failed to update product");
+                }
+                
+                // Handle image deletions
+                for (const imageId of imagesToDelete) {
+                    await fetch(`http://127.0.0.1:3000/api/v1/products/product-image`, {
+                        method: 'DELETE',
+                        headers: getAuthHeaders(),
+                        body: JSON.stringify({ id: imageId })
+                    });
+                }
+                
+                // Upload new images if any
+                const imageFiles = document.getElementById("editImage").files;
+                if (imageFiles.length > 0) {
+                    const ranksInput = document.getElementById("editImageRanks").value;
+                    const ranks = ranksInput ? ranksInput.split(',').map(r => parseInt(r.trim())) : [];
+                    
+                    for (let i = 0; i < imageFiles.length; i++) {
+                        const imageFormData = new FormData();
+                        imageFormData.append("image", imageFiles[i]);
+                        
+                        // Upload image
+                        const imageResponse = await fetch(`http://127.0.0.1:3000/api/v1/products/image`, {
+                            method: 'POST',
+                            headers: getAuthHeaders(null), // No content-type for FormData
+                            body: imageFormData
+                        });
+                        
+                        if (!imageResponse.ok) {
+                            const errorData = await imageResponse.json();
+                            console.error("Failed to upload image:", errorData);
+                            continue;
+                        }
+                        
+                        const imageData = await imageResponse.json();
+                        const imageId = imageData.id;
+                        const rank = ranks[i] || 1;
+                        
+                        // Update image rank and associate with product
+                        await fetch(`http://127.0.0.1:3000/api/v1/products/product-image`, {
+                            method: 'PATCH',
+                            headers: getAuthHeaders(),
+                            body: JSON.stringify({
+                                id: imageId,
+                                rank: rank,
+                                productId: productId
+                            })
+                        });
+                    }
+                }
+                
+                document.getElementById('editUploadStatus').innerText = "Product updated successfully!";
+                $('#editProductModal').modal('hide');
+                fetchProducts();
+            } catch (error) {
+                console.error("Error:", error);
+                document.getElementById('editUploadStatus').innerText = error.message || "Error submitting form.";
+            }
+        });
+        
+        // Fetch and Render Products
+        async function fetchProducts() {
+            try {
+                const response = await fetch('http://127.0.0.1:3000/api/v1/products/product', {
+                    headers: getAuthHeaders()
+                });
+                
+                if (response.ok) {
+                    const products = await response.json();
+                    renderTable(products);
+                } else {
+                    const errorData = await response.json();
+                    console.error('Failed to fetch products:', errorData.message);
+                }
+            } catch (error) {
+                console.error('Error fetching products:', error);
+            }
+        }
+        
+        // Render the table with DataTables integration
+        function renderTable(products) {
+            const tbody = document.querySelector('#productsTable tbody');
+            // Destroy existing DataTables instance if it exists
+            if ($.fn.DataTable.isDataTable('#productsTable')) {
+                $('#productsTable').DataTable().destroy();
+            }
+            tbody.innerHTML = '';
+            
+            products.forEach(product => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${product.Images && product.Images.length > 0 ? `<img src="${product.Images[0].url}" alt="${product.nameEn}" style="width: 50px; height: 50px; object-fit: cover;">` : 'No image'}</td>
+                    <td>${product.skuId}</td>
+                    <td>${product.nameEn}</td>
+                    <td>${product.nameAr}</td>
+                    <td>${product.priceBefore}</td>
+                    <td>${product.priceAfter}</td>
+                    <td>${product.itemRank}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary edit-btn" data-id="${product._id || product.id}">Edit</button>
+                        <button class="btn btn-sm btn-danger delete-btn" data-id="${product._id || product.id}">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            // Initialize DataTables with custom options
+            $('#productsTable').DataTable({
+                columnDefs: [
+                    { targets: [0, 7], orderable: false, searchable: false }
+                ]
+            });
+        }
+        
+        // Handle Edit Button Click
+        async function handleEdit(button) {
+            const productId = button.getAttribute('data-id');
+            
+            try {
+                const response = await fetch(`http://127.0.0.1:3000/api/v1/products/product/${productId}`, {
+                    headers: getAuthHeaders()
+                });
+                
+                if (response.ok) {
+                    const product = await response.json();
+                    if (!product) {
+                        throw new Error('Product not found');
+                    }
+                    populateEditForm(product);
+                    $('#editProductModal').modal('show');
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to fetch product details');
+                }
+            } catch (error) {
+                console.error('Error fetching product:', error);
+                alert('Error fetching product details: ' + error.message);
+            }
+        }
+        
+        // Populate Edit Form with Product Data
+        function populateEditForm(product) {
+            if (!product) {
+                throw new Error('Product data is null');
+            }
+            
+            document.getElementById('editProductId').value = product._id || product.id;
+            document.getElementById('editSkuId').value = product.skuId || '';
+            document.getElementById('editNameEn').value = product.nameEn || '';
+            document.getElementById('editNameAr').value = product.nameAr || '';
+            document.getElementById('editCompany').value = product.company || '';
+            document.getElementById('editCardDescriptionEn').value = product.cardDescriptionEn || '';
+            document.getElementById('editCardDescriptionAr').value = product.cardDescriptionAr || '';
+            document.getElementById('editDescriptionEn').value = product.descriptionEn || '';
+            document.getElementById('editDescriptionAr').value = product.descriptionAr || '';
+            document.getElementById('editPriceBefore').value = product.priceBefore || '';
+            document.getElementById('editPriceAfter').value = product.priceAfter || '';
+            document.getElementById('editAvailableStock').value = product.availableStock || '';
+            document.getElementById('editMaxOrderQuantity').value = product.maxOrderQuantity || '';
+            document.getElementById('editItemRank').value = product.itemRank || '';
+            
+            // Reset checkboxes first
+            document.querySelectorAll('input[name="editTags"]').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            document.querySelectorAll('input[name="editCategory"]').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            
+            // Set tags checkboxes
+            if (product.tags && Array.isArray(product.tags)) {
+                product.tags.forEach(tagId => {
+                    const checkbox = document.querySelector(`input[name="editTags"][value="${tagId}"]`);
+                    if (checkbox) checkbox.checked = true;
+                });
+            }
+            
+            // Set categories checkboxes
+            if (product.categories && Array.isArray(product.categories)) {
+                product.categories.forEach(catId => {
+                    const checkbox = document.querySelector(`input[name="editCategory"][value="${catId}"]`);
+                    if (checkbox) checkbox.checked = true;
+                });
+            }
+            
+            // Clear and populate existing images
+            const existingImagesContainer = document.getElementById('editExistingImagesContainer');
+            existingImagesContainer.innerHTML = '';
+            imagesToDelete = []; // Reset images to delete array
+            currentProductImages = product.Images || [];
+            
+            if (currentProductImages && Array.isArray(currentProductImages)) {
+                currentProductImages.forEach(image => {
+                    const imageItem = document.createElement('div');
+                    imageItem.className = 'image-item';
+                    imageItem.dataset.id = image._id || image.id;
+                    imageItem.innerHTML = `
+                        <img src="${image.url}" class="image-preview">
+                        <button type="button" class="delete-image-btn" title="Delete image">×</button>
+                    `;
+                    existingImagesContainer.appendChild(imageItem);
+                });
+            }
+        }
+        
+        // Handle Delete Button Click
+        async function handleDelete(button) {
+            const productId = button.getAttribute('data-id');
+            if (!productId) {
+                console.error('Product ID not found');
+                return;
+            }
+            
+            if (confirm('Are you sure you want to delete this product?')) {
+                try {
+                    const response = await fetch(`http://127.0.0.1:3000/api/v1/products/product/${productId}`, {
+                        method: 'DELETE',
+                        headers: getAuthHeaders()
+                    });
+                    
+                    if (response.ok) {
+                        fetchProducts(); // Refresh the product list
+                    } else {
+                        const errorData = await response.json();
+                        console.error('Failed to delete product:', errorData.message);
+                        alert('Failed to delete product: ' + (errorData.message || 'Unknown error'));
+                    }
+                } catch (error) {
+                    console.error('Error deleting product:', error);
+                    alert('Error deleting product: ' + error.message);
+                }
+            }
+        }
+        
+        // Handle Add Product Button Click
+        document.getElementById('addProductBtn').addEventListener('click', async () => {
+            const userToken = getUserToken();
+            if (!userToken) {
+                alert('Please login first');
+                return;
+            }
+            
+            const isAdmin = await checkAdminStatus();
+            if (!isAdmin) {
+                alert('Only admin can access this route');
+                return;
+            }
+            
+            document.getElementById('addProductForm').reset();
+            document.getElementById('addUploadStatus').innerText = '';
+            document.getElementById('addImagePreviews').innerHTML = '';
+            $('#addProductModal').modal('show');
+        });
+        
+        // Handle Image Deletion in Edit Form
+        document.getElementById('editExistingImagesContainer').addEventListener('click', function(event) {
+            if (event.target.classList.contains('delete-image-btn')) {
+                const imageItem = event.target.closest('.image-item');
+                const imageId = imageItem.dataset.id;
+                imagesToDelete.push(imageId);
+                imageItem.remove();
+            }
+        });
+        
+        // Initial Fetch of Products and related data
+        document.addEventListener('DOMContentLoaded', async function() {
+            const userToken = getUserToken();
+            if (!userToken) {
+                alert('Please login first');
+                // You might want to redirect to login page here
+                return;
+            }
+            
+            // Check admin status first
+            const isAdmin = await checkAdminStatus();
+            if (!isAdmin) {
+                // Hide admin-only features if needed
+                document.getElementById('addProductBtn').style.display = 'none';
+                document.getElementById('csvForm').style.display = 'none';
+            }
+            
+            // Fetch all required data
+            await Promise.all([
+                fetchProducts(),
+                fetchCategories(),
+                fetchTags()
+            ]);
+        });
+    </script>
+</html>

@@ -1,0 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Alexandria:wght@100..900&display=swap');
+
+.alexandria {
+  font-family: "Alexandria", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+
+/* Font weight utility classes */
+.alexandria-100 { font-weight: 100; }
+.alexandria-200 { font-weight: 200; }
+.alexandria-300 { font-weight: 300; }
+.alexandria-400 { font-weight: 400; }
+.alexandria-500 { font-weight: 500; }
+.alexandria-600 { font-weight: 600; }
+.alexandria-700 { font-weight: 700; }
+.alexandria-800 { font-weight: 800; }
+.alexandria-900 { font-weight: 900; }
