@@ -12,6 +12,6 @@ export default defineConfig({
   ],
   server: {
     host: 'localhost', // or '127.0.0.1'
-    port: 5173,       // Try this or another port
+    port: 3000,       // Try this or another port
   },
 });
